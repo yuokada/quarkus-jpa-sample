@@ -41,4 +41,16 @@ public class Manager {
     @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     @UpdateTimestamp
     public LocalDateTime updatedAt = LocalDateTime.now();
+
+    @Override
+    public String toString() {
+        return "Manager{" +
+            "id=" + id +
+            ", team=" + team.id +
+            ", name='" + name + '\'' +
+            ", isActive=" + isActive +
+            ", createdAt=" + createdAt +
+            ", updatedAt=" + updatedAt +
+            '}';
+    }
 }

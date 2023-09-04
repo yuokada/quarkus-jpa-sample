@@ -1,5 +1,8 @@
 package io.github.yuokada.npb;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -17,13 +20,18 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 public class ManagerResource {
+
     @Inject
     ManagerRepository repository;
 
+    @Inject
+    ObjectMapper mapper;
+
     @GET
     @Path("/{id}")
-    public Manager getById(@PathParam("id") long managerId) {
-        return repository.findByIdOptional(managerId).orElseThrow(NotFoundException::new);
+    public ManageResponse getByIdCross(@PathParam("id") long managerId) {
+        Manager manager = repository.findByIdOptional(managerId).orElseThrow(NotFoundException::new);
+        return convertToManageResponse(manager);
     }
 
     @GET
@@ -31,4 +39,22 @@ public class ManagerResource {
         List<Manager> teams = repository.allManagers(includeDeleted);
         return teams;
     }
+
+    private ManageResponse convertToManageResponse(Manager manager) {
+        return new ManageResponse(
+            manager.id,
+            manager.name,
+            manager.team.id,
+            manager.team.name
+        );
+    }
+
+    @JsonSerialize
+    public record ManageResponse(
+        Integer id,
+        String name,
+        Integer team_id,
+        String team_name) {
+    }
+
 }

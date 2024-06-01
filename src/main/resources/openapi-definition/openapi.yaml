@@ -1,13 +1,14 @@
 ---
 openapi: 3.0.3
 info:
-  title: quarkus-jpa-sample API
-  version: 1.0.0-SNAPSHOT
+  title: JPA Sample Application
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
 servers:
 - url: http://localhost:8080
-  description: Auto generated value
-- url: http://0.0.0.0:8080
-  description: Auto generated value
+  description: Local server
 paths:
   /v1/manager:
     get:

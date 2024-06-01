@@ -62,3 +62,31 @@ Create your first JPA entity
 
 [Related Hibernate with Panache section...](https://quarkus.io/guides/hibernate-orm-panache)
 
+-----------
+
+## For development
+
+Here is the list of extensions installed in this project:
+
+```shell
+$ quarkus ext list
+Current Quarkus extensions installed:
+
+✬ ArtifactId                                         Extension Name
+✬ quarkus-flyway                                     Flyway
+✬ quarkus-hibernate-orm                              Hibernate ORM
+✬ quarkus-hibernate-orm-panache                      Hibernate ORM with Panache
+✬ quarkus-hibernate-orm-rest-data-panache            REST resources for Hibernate ORM with Panache
+✬ quarkus-hibernate-validator                        Hibernate Validator
+✬ quarkus-jdbc-postgresql                            JDBC Driver - PostgreSQL
+✬ quarkus-logging-json                               Logging JSON
+✬ quarkus-rest                                       REST
+✬ quarkus-rest-jackson                               REST Jackson
+✬ quarkus-smallrye-openapi                           SmallRye OpenAPI
+
+To get more information, append `--full` to your command line.
+```
+
+### Dev console
+
+- http://localhost:8080/q/dev-ui/welcome

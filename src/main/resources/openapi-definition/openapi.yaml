@@ -64,6 +64,17 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Team"
+    post:
+      tags:
+      - Team Resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+      responses:
+        "200":
+          description: OK
   /v1/team/{id}:
     get:
       tags:
@@ -82,6 +93,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Team"
+    delete:
+      tags:
+      - Team Resource
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        "200":
+          description: OK
 components:
   schemas:
     LocalDateTime:
@@ -114,3 +138,8 @@ components:
           $ref: "#/components/schemas/LocalDateTime"
         updatedAt:
           $ref: "#/components/schemas/LocalDateTime"
+    TeamCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string

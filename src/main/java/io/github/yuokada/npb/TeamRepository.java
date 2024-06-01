@@ -16,7 +16,7 @@ public class TeamRepository implements PanacheRepositoryBase<Team, Integer> {
         if (includeDeleted != null && includeDeleted) {
             return listAll(Sort.by("id"));
         } else {
-            return find("is_active", true).list();
+            return find("isActive", true).list();
         }
     }
 }

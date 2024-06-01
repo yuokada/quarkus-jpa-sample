@@ -1,6 +1,9 @@
 package io.github.yuokada.npb;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.github.yuokada.npb.serializer.LocalDateTimeSerializer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -37,10 +40,12 @@ public class Team {
     @JsonIgnore
     public Boolean isActive = true;
 
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     @Column(name = "created_at", updatable = false, nullable = false, columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     @CreationTimestamp
     public LocalDateTime createdAt = LocalDateTime.now();
 
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     @UpdateTimestamp
     public LocalDateTime updatedAt = LocalDateTime.now();

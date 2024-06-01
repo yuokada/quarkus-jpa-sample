@@ -1,6 +1,9 @@
 package io.github.yuokada.npb;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.github.yuokada.npb.serializer.LocalDateTimeSerializer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,6 +21,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "manager")
 public class Manager {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Integer id;
@@ -34,10 +38,13 @@ public class Manager {
     @JsonIgnore
     public Boolean isActive;
 
+    // @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     @Column(name = "created_at", updatable = false, nullable = false, columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     @CreationTimestamp
     public LocalDateTime createdAt = LocalDateTime.now();
 
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     @UpdateTimestamp
     public LocalDateTime updatedAt = LocalDateTime.now();

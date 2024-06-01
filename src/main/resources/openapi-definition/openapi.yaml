@@ -45,26 +45,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ManageResponse"
+                $ref: "#/components/schemas/Manager"
+  /v1/team:
+    get:
+      tags:
+      - Team Resource
+      parameters:
+      - name: include_deleted
+        in: query
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Team"
+  /v1/team/{id}:
+    get:
+      tags:
+      - Team Resource
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
 components:
   schemas:
     LocalDateTime:
       format: date-time
       type: string
       example: 2022-03-10T12:15:50
-    ManageResponse:
-      type: object
-      properties:
-        id:
-          format: int32
-          type: integer
-        name:
-          type: string
-        team_id:
-          format: int32
-          type: integer
-        team_name:
-          type: string
     Manager:
       type: object
       properties:

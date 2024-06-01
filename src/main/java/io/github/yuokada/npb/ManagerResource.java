@@ -12,7 +12,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponseSchema;
 
 @Path("/v1/manager")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -28,15 +30,17 @@ public class ManagerResource {
 
     @GET
     @Path("/{id}")
-    public ManageResponse getByIdCross(@PathParam("id") long managerId) {
+    @APIResponseSchema(value = Manager.class, responseCode = "200")
+    public Response getByIdCross(@PathParam("id") long managerId) {
         Manager manager = repository.findByIdOptional(managerId).orElseThrow(NotFoundException::new);
-        return convertToManageResponse(manager);
+        return Response.ok(manager).build();
     }
 
     @GET
-    public List<Manager> list(@QueryParam("include_deleted") Boolean includeDeleted) {
+    @APIResponseSchema(value = Manager[].class, responseCode = "200")
+    public Response list(@QueryParam("include_deleted") Boolean includeDeleted) {
         List<Manager> teams = repository.allManagers(includeDeleted);
-        return teams;
+        return Response.ok(teams).build();
     }
 
     private ManageResponse convertToManageResponse(Manager manager) {

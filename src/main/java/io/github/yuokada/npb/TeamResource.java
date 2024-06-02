@@ -78,7 +78,7 @@ public class TeamResource {
             if (ex.getCause() instanceof RollbackException rollbackException) {
                 if (rollbackException.getCause() instanceof ConstraintViolationException) {
                     String constraintName = ((ConstraintViolationException) rollbackException.getCause()).getConstraintName();
-                    if (constraintName != null && constraintName.contains("team_name_unique")) {
+                    if (constraintName != null && constraintName.contains("team_name")) {
                         return Response.status(Status.CONFLICT)
                             .entity(new ErrorMessage("Team name must be unique.",
                                 rollbackException.getCause().getMessage()))

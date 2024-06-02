@@ -74,11 +74,16 @@ paths:
               $ref: "#/components/schemas/TeamCreateRequest"
       responses:
         "201":
-          description: Created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Team"
+                type: object
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
   /v1/team/{id}:
     get:
       tags:
@@ -112,6 +117,13 @@ paths:
           description: OK
 components:
   schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        message:
+          type: string
+        detailMessage:
+          type: string
     LocalDateTime:
       format: date-time
       type: string

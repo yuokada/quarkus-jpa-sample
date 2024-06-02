@@ -1,8 +1,12 @@
 package io.github.yuokada.npb;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.yuokada.npb.model.ErrorMessage;
+import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.narayana.jta.QuarkusTransactionException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.RollbackException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -15,12 +19,20 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponseSchema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.hibernate.exception.ConstraintViolationException;
+import org.jboss.logging.Logger;
 
 @Path("/v1/team")
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 public class TeamResource {
+
+    private static final Logger LOGGER = Logger.getLogger(TeamResource.class.getName());
 
     @Inject
     TeamRepository repository;
@@ -44,16 +56,41 @@ public class TeamResource {
     }
 
     @POST
-    @Transactional
+    // @Transactional
     @Path("/")
-    // @APIResponseSchema(value = Team.class, responseCode = "204")
+    @APIResponses({
+        @APIResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = Void.class))),
+        @APIResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+        @APIResponse(responseCode = "500")
+    })
     public Response post(
         TeamCreateRequest request
     ) {
-        Team team = new Team();
-        team.name = request.name;
-        repository.persist(team);
-        return Response.status(Response.Status.CREATED).build();
+        try {
+            QuarkusTransaction.begin();
+            Team team = new Team();
+            team.name = request.name;
+            repository.persist(team);
+            QuarkusTransaction.commit();
+
+            return Response.status(Response.Status.CREATED).build();
+        } catch (QuarkusTransactionException ex) {
+            if (ex.getCause() instanceof RollbackException rollbackException) {
+                if (rollbackException.getCause() instanceof ConstraintViolationException) {
+                    String constraintName = ((ConstraintViolationException) rollbackException.getCause()).getConstraintName();
+                    if (constraintName != null && constraintName.contains("team_name_unique")) {
+                        return Response.status(Status.CONFLICT)
+                            .entity(new ErrorMessage("Team name must be unique.",
+                                rollbackException.getCause().getMessage()))
+                            .build();
+                    }
+                }
+            }
+            LOGGER.error("Transaction failed: ", ex);
+            return Response.status(Status.INTERNAL_SERVER_ERROR)
+                .entity(new ErrorMessage("Internal server error", ex.getMessage()))
+                .build();
+        }
     }
 
     @DELETE

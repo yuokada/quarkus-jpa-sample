@@ -73,8 +73,12 @@ paths:
             schema:
               $ref: "#/components/schemas/TeamCreateRequest"
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
   /v1/team/{id}:
     get:
       tags:

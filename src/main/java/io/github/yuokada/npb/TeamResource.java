@@ -55,11 +55,11 @@ public class TeamResource {
         return Response.ok(teams).build();
     }
 
-    @POST
-    // @Transactional
-    @Path("/")
+    @Deprecated
+    // @POST
+    // @Path("/")
     @APIResponses({
-        @APIResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = Void.class))),
+        @APIResponse(responseCode = "201"),
         @APIResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
         @APIResponse(responseCode = "500")
     })
@@ -90,6 +90,33 @@ public class TeamResource {
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .entity(new ErrorMessage("Internal server error", ex.getMessage()))
                 .build();
+        }
+    }
+
+    @POST
+    @Transactional
+    @Path("/")
+    @APIResponses({
+        @APIResponse(responseCode = "201"),
+        @APIResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+        @APIResponse(responseCode = "500")
+    })
+    public Response postV2(TeamCreateRequest request) {
+        try {
+            Team team = new Team();
+            team.name = request.name;
+            repository.persistAndFlush(team);
+            return Response.status(Response.Status.CREATED).build();
+        } catch (ConstraintViolationException ex) {
+            LOGGER.error("Transaction failed: ", ex);
+            String constraintName = ex.getConstraintName();
+            if (constraintName != null && constraintName.contains("team_name")) {
+                return Response.status(Status.CONFLICT)
+                    .entity(new ErrorMessage("Team name must be unique.",
+                        ex.getCause().getMessage()))
+                    .build();
+            }
+            throw ex; // Unsupported exception
         }
     }
 

@@ -69,6 +69,38 @@ components:
           format: int32
         position:
           type: string
+    PlayerTransferHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        playerId:
+          type: integer
+          format: int32
+        fromTeamId:
+          type: integer
+          format: int32
+        toTeamId:
+          type: integer
+          format: int32
+        transferredAt:
+          $ref: "#/components/schemas/LocalDateTime"
+        createdAt:
+          $ref: "#/components/schemas/LocalDateTime"
+    PlayerUpdateRequest:
+      type: object
+      properties:
+        teamId:
+          type: integer
+          format: int32
+        name:
+          type: string
+        uniformNumber:
+          type: integer
+          format: int32
+        position:
+          type: string
     Team:
       type: object
       properties:
@@ -188,6 +220,10 @@ paths:
         in: query
         schema:
           type: boolean
+      - name: name
+        in: query
+        schema:
+          type: string
       - name: position
         in: query
         schema:
@@ -231,6 +267,34 @@ paths:
       tags:
       - Player Resource
   /v1/player/{id}:
+    put:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400": {}
+        "404": {}
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
+      summary: Update
+      tags:
+      - Player Resource
     get:
       parameters:
       - name: id
@@ -261,6 +325,27 @@ paths:
         "200":
           description: OK
       summary: Delete
+      tags:
+      - Player Resource
+  /v1/player/{id}/transfers:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerTransferHistoryResponse"
+      summary: Get Transfers
       tags:
       - Player Resource
   /v1/team:

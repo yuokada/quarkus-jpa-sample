@@ -52,6 +52,17 @@ select
     end
 from generate_series(1, 120) as s(i);
 
+-- Backfill transfer history for existing players as initial assignment events
+insert into public.player_transfer_history (player_id, from_team_id, to_team_id, transferred_at, created_at)
+select
+    p.id,
+    null,
+    p.team_id,
+    p.created_at,
+    p.created_at
+from public.player p;
+
 ALTER SEQUENCE team_seq RESTART WITH 13;
 ALTER SEQUENCE manager_id_seq RESTART WITH 13;
 ALTER SEQUENCE player_id_seq RESTART WITH 121;
+ALTER SEQUENCE player_transfer_history_id_seq RESTART WITH 121;

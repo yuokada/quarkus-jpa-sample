@@ -13,6 +13,9 @@
     -- manager テーブルを依存オブジェクトごと削除する
     drop table if exists manager cascade;
 
+    -- player_transfer_history テーブルを依存オブジェクトごと削除する
+    drop table if exists player_transfer_history cascade;
+
     -- player テーブルを依存オブジェクトごと削除する
     drop table if exists player cascade;
 
@@ -21,3 +24,6 @@
 
     -- team_seq シーケンスを削除する
     drop sequence if exists team_seq;
+
+    -- player_transfer_history_id_seq シーケンスを削除する
+    drop sequence if exists player_transfer_history_id_seq;

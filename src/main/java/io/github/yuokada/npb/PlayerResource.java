@@ -18,6 +18,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -45,12 +47,35 @@ public class PlayerResource {
     @Inject
     TeamRepository teamRepository;
 
+    @Inject
+    PlayerTransferHistoryRepository transferHistoryRepository;
+
     @GET
     @Path("/{id}")
     @APIResponseSchema(value = Player.class, responseCode = "200")
     public Response getById(@PathParam("id") Integer playerId) {
         Player player = repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
         return Response.ok(player).build();
+    }
+
+    @GET
+    @Path("/{id}/transfers")
+    @APIResponseSchema(value = PlayerTransferHistoryResponse[].class, responseCode = "200")
+    public Response getTransfers(@PathParam("id") Integer playerId) {
+        repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
+        List<PlayerTransferHistoryResponse> responses = transferHistoryRepository
+            .findByPlayerIdOrderByTransferredAtAsc(playerId)
+            .stream()
+            .map(history -> new PlayerTransferHistoryResponse(
+                history.id,
+                history.player.id,
+                history.fromTeam == null ? null : history.fromTeam.id,
+                history.toTeam.id,
+                history.transferredAt,
+                history.createdAt
+            ))
+            .toList();
+        return Response.ok(responses).build();
     }
 
     @GET
@@ -91,6 +116,7 @@ public class PlayerResource {
             player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
             player.position = normalizePosition(request.position());
             repository.persistAndFlush(player);
+            recordTransferHistory(player, null, player.team, player.createdAt);
             return Response.status(Status.CREATED).entity(player).build();
         } catch (ConstraintViolationException ex) {
             return buildConstraintViolationResponse(ex);
@@ -120,10 +146,15 @@ public class PlayerResource {
         }
 
         Player player = repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
+        Team previousTeam = player.team;
+        Team nextTeam = previousTeam;
+        boolean teamChanged = false;
 
         try {
             if (request.teamId() != null) {
-                player.team = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
+                nextTeam = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
+                teamChanged = !nextTeam.id.equals(previousTeam.id);
+                player.team = nextTeam;
             }
 
             if (request.name() != null) {
@@ -139,6 +170,9 @@ public class PlayerResource {
             }
 
             repository.persistAndFlush(player);
+            if (teamChanged) {
+                recordTransferHistory(player, previousTeam, nextTeam, LocalDateTime.now());
+            }
             return Response.ok(player).build();
         } catch (ConstraintViolationException ex) {
             return buildConstraintViolationResponse(ex);
@@ -196,6 +230,15 @@ public class PlayerResource {
         return normalized;
     }
 
+    private void recordTransferHistory(Player player, Team fromTeam, Team toTeam, LocalDateTime transferredAt) {
+        PlayerTransferHistory history = new PlayerTransferHistory();
+        history.player = player;
+        history.fromTeam = fromTeam;
+        history.toTeam = toTeam;
+        history.transferredAt = transferredAt == null ? LocalDateTime.now() : transferredAt;
+        transferHistoryRepository.persist(history);
+    }
+
     public record PlayerCreateRequest(
         Integer teamId,
         String name,
@@ -209,6 +252,16 @@ public class PlayerResource {
         String name,
         Integer uniformNumber,
         String position
+    ) {
+    }
+
+    public record PlayerTransferHistoryResponse(
+        Integer id,
+        Integer playerId,
+        Integer fromTeamId,
+        Integer toTeamId,
+        LocalDateTime transferredAt,
+        LocalDateTime createdAt
     ) {
     }
 }

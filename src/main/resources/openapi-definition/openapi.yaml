@@ -1,19 +1,62 @@
 ---
-openapi: 3.0.3
+openapi: 3.1.0
 info:
-  title: JPA Sample Application
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+  title: JPA Sample Application
   version: 1.0.0
 servers:
 - url: http://localhost:8080
   description: Local server
+components:
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        message:
+          type: string
+        detailMessage:
+          type: string
+    LocalDateTime:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T12:15:50
+    Manager:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        team:
+          $ref: "#/components/schemas/Team"
+        name:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/LocalDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/LocalDateTime"
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/LocalDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/LocalDateTime"
+    TeamCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
 paths:
   /v1/manager:
     get:
-      tags:
-      - Manager Resource
       parameters:
       - name: include_deleted
         in: query
@@ -28,17 +71,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Manager"
-  /v1/manager/{id}:
-    get:
+      summary: List
       tags:
       - Manager Resource
+  /v1/manager/{id}:
+    get:
       parameters:
       - name: id
         in: path
         required: true
         schema:
-          format: int64
           type: integer
+          format: int64
       responses:
         "200":
           description: OK
@@ -46,10 +90,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Manager"
+      summary: Get By Id Cross
+      tags:
+      - Manager Resource
   /v1/team:
-    get:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+        required: true
+      responses:
+        "201": {}
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
+        "400":
+          description: Bad Request
+      summary: Post V 2
       tags:
       - Team Resource
+    get:
       parameters:
       - name: include_deleted
         in: query
@@ -64,33 +129,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Team"
-    post:
+      summary: List
       tags:
       - Team Resource
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TeamCreateRequest"
-      responses:
-        "201": {}
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorMessage"
-        "500": {}
   /v1/team/{id}:
     get:
-      tags:
-      - Team Resource
       parameters:
       - name: id
         in: path
         required: true
         schema:
-          format: int32
           type: integer
+          format: int32
       responses:
         "200":
           description: OK
@@ -98,60 +148,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Team"
-    delete:
+      summary: Get By Id Cross
       tags:
       - Team Resource
+    delete:
       parameters:
       - name: id
         in: path
         required: true
         schema:
-          format: int32
           type: integer
+          format: int32
       responses:
         "200":
           description: OK
-components:
-  schemas:
-    ErrorMessage:
-      type: object
-      properties:
-        message:
-          type: string
-        detailMessage:
-          type: string
-    LocalDateTime:
-      format: date-time
-      type: string
-      example: 2022-03-10T12:15:50
-    Manager:
-      type: object
-      properties:
-        id:
-          format: int32
-          type: integer
-        team:
-          $ref: "#/components/schemas/Team"
-        name:
-          type: string
-        createdAt:
-          $ref: "#/components/schemas/LocalDateTime"
-        updatedAt:
-          $ref: "#/components/schemas/LocalDateTime"
-    Team:
-      type: object
-      properties:
-        id:
-          format: int32
-          type: integer
-        name:
-          type: string
-        createdAt:
-          $ref: "#/components/schemas/LocalDateTime"
-        updatedAt:
-          $ref: "#/components/schemas/LocalDateTime"
-    TeamCreateRequest:
-      type: object
-      properties:
-        name:
-          type: string
+      summary: Delete
+      tags:
+      - Team Resource

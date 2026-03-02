@@ -13,6 +13,48 @@ You can run your application in dev mode that enables live coding using:
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
 
+## PostgreSQL with docker-compose
+
+You can start a local PostgreSQL instance with `docker-compose.yml`.  
+`src/main/resources/application.properties` is configured to use the following connection:
+
+- Host: `localhost`
+- Port: `55901`
+- Database: `npb`
+- User/Password: `quarkus` / `quarkus`
+
+### Start
+
+```shell
+docker compose up -d
+```
+
+### Check status
+
+```shell
+docker compose ps
+docker compose logs -f postgres
+```
+
+### Stop
+
+```shell
+docker compose down
+```
+
+### Recreate with clean data
+
+```shell
+docker compose down -v
+docker compose up -d
+```
+
+After PostgreSQL is up, start the application in dev mode.
+
+```shell
+./mvnw compile quarkus:dev
+```
+
 ## Packaging and running the application
 
 The application can be packaged using:

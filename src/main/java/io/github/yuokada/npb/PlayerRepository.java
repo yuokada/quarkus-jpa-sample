@@ -9,7 +9,7 @@ import java.util.List;
 @ApplicationScoped
 public class PlayerRepository implements PanacheRepositoryBase<Player, Integer> {
 
-    public List<Player> search(Boolean includeDeleted, Integer teamId, String position) {
+    public List<Player> search(Boolean includeDeleted, Integer teamId, String position, String name) {
         StringBuilder query = new StringBuilder();
         List<Object> params = new ArrayList<>();
 
@@ -32,6 +32,14 @@ public class PlayerRepository implements PanacheRepositoryBase<Player, Integer> 
             }
             query.append("position = ?").append(params.size() + 1);
             params.add(position.trim().toUpperCase());
+        }
+
+        if (name != null && !name.isBlank()) {
+            if (!query.isEmpty()) {
+                query.append(" and ");
+            }
+            query.append("name like ?").append(params.size() + 1);
+            params.add("%" + name.trim() + "%");
         }
 
         if (query.isEmpty()) {

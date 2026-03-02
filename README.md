@@ -55,6 +55,32 @@ After PostgreSQL is up, start the application in dev mode.
 ./mvnw compile quarkus:dev
 ```
 
+## Panache sample endpoint
+
+A simple Panache sample endpoint is available for teams:
+
+- `GET /v1/panache-sample/teams`
+- Query params:
+- `name` (optional): case-insensitive partial match
+- `page` (optional, default `0`)
+- `size` (optional, default `5`)
+- `GET /v1/panache-sample/teams/native-stats` (native SQL + `COUNT`)
+- `GET /v1/panache-sample/teams/native-summary` (native SQL + `COUNT` / `MAX`)
+- `GET /v1/panache-sample/teams/native-cte-stats` (native SQL + CTE + `COUNT` + window function)
+- Query param:
+- `min_manager_count` (optional, default `0`)
+
+Examples:
+
+```shell
+curl "http://localhost:8080/v1/panache-sample/teams"
+curl "http://localhost:8080/v1/panache-sample/teams?name=giants&page=0&size=10"
+curl "http://localhost:8080/v1/panache-sample/teams/native-stats"
+curl "http://localhost:8080/v1/panache-sample/teams/native-summary"
+curl "http://localhost:8080/v1/panache-sample/teams/native-cte-stats"
+curl "http://localhost:8080/v1/panache-sample/teams/native-cte-stats?min_manager_count=1"
+```
+
 ## Packaging and running the application
 
 The application can be packaged using:

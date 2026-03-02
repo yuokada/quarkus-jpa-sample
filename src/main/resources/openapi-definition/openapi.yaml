@@ -37,6 +37,38 @@ components:
           $ref: "#/components/schemas/LocalDateTime"
         updatedAt:
           $ref: "#/components/schemas/LocalDateTime"
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        team:
+          $ref: "#/components/schemas/Team"
+        name:
+          type: string
+        uniformNumber:
+          type: integer
+          format: int32
+        position:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/LocalDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/LocalDateTime"
+    PlayerCreateRequest:
+      type: object
+      properties:
+        teamId:
+          type: integer
+          format: int32
+        name:
+          type: string
+        uniformNumber:
+          type: integer
+          format: int32
+        position:
+          type: string
     Team:
       type: object
       properties:
@@ -93,6 +125,144 @@ paths:
       summary: Get By Id Cross
       tags:
       - Manager Resource
+  /v1/panache-sample/teams:
+    get:
+      parameters:
+      - name: name
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 5
+      responses:
+        "200":
+          description: OK
+      summary: List Teams By Panache
+      tags:
+      - Panache Sample Resource
+  /v1/panache-sample/teams/native-cte-stats:
+    get:
+      parameters:
+      - name: min_manager_count
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        "200":
+          description: OK
+      summary: Team Stats By Native Cte
+      tags:
+      - Panache Sample Resource
+  /v1/panache-sample/teams/native-stats:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: Team Stats By Native Query
+      tags:
+      - Panache Sample Resource
+  /v1/panache-sample/teams/native-summary:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: Team Summary By Native Query
+      tags:
+      - Panache Sample Resource
+  /v1/player:
+    get:
+      parameters:
+      - name: include_deleted
+        in: query
+        schema:
+          type: boolean
+      - name: position
+        in: query
+        schema:
+          type: string
+      - name: team_id
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+      summary: List
+      tags:
+      - Player Resource
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerCreateRequest"
+        required: true
+      responses:
+        "201": {}
+        "404": {}
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
+        "400":
+          description: Bad Request
+      summary: Create
+      tags:
+      - Player Resource
+  /v1/player/{id}:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+      summary: Get By Id
+      tags:
+      - Player Resource
+    delete:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+      summary: Delete
+      tags:
+      - Player Resource
   /v1/team:
     post:
       requestBody:

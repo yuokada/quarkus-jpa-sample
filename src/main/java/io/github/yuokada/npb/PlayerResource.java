@@ -1,0 +1,120 @@
+package io.github.yuokada.npb;
+
+import io.github.yuokada.npb.model.ErrorMessage;
+import jakarta.transaction.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponseSchema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.hibernate.exception.ConstraintViolationException;
+import org.jboss.logging.Logger;
+
+@Path("/v1/player")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@ApplicationScoped
+public class PlayerResource {
+
+    private static final Logger LOGGER = Logger.getLogger(PlayerResource.class.getName());
+
+    @Inject
+    PlayerRepository repository;
+
+    @Inject
+    TeamRepository teamRepository;
+
+    @GET
+    @Path("/{id}")
+    @APIResponseSchema(value = Player.class, responseCode = "200")
+    public Response getById(@PathParam("id") Integer playerId) {
+        Player player = repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
+        return Response.ok(player).build();
+    }
+
+    @GET
+    @APIResponseSchema(value = Player[].class, responseCode = "200")
+    public Response list(
+        @QueryParam("include_deleted") Boolean includeDeleted,
+        @QueryParam("team_id") Integer teamId,
+        @QueryParam("position") String position
+    ) {
+        var players = repository.search(includeDeleted, teamId, position);
+        return Response.ok(players).build();
+    }
+
+    @POST
+    @Transactional
+    @Path("/")
+    @APIResponses({
+        @APIResponse(responseCode = "201"),
+        @APIResponse(responseCode = "404"),
+        @APIResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+        @APIResponse(responseCode = "500")
+    })
+    public Response create(PlayerCreateRequest request) {
+        if (request == null
+            || request.teamId() == null
+            || request.name() == null || request.name().isBlank()
+            || request.uniformNumber() == null
+            || request.position() == null || request.position().isBlank()) {
+            throw new BadRequestException("teamId, name, uniformNumber and position are required.");
+        }
+
+        Team team = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
+        try {
+            Player player = new Player();
+            player.team = team;
+            player.name = request.name().trim();
+            player.uniformNumber = request.uniformNumber();
+            player.position = request.position().trim().toUpperCase();
+            repository.persistAndFlush(player);
+            return Response.status(Status.CREATED).build();
+        } catch (ConstraintViolationException ex) {
+            LOGGER.error("Transaction failed: ", ex);
+            String constraintName = ex.getConstraintName();
+            if (constraintName != null && constraintName.contains("team_id") && constraintName.contains("uniform_number")) {
+                return Response.status(Status.CONFLICT)
+                    .entity(new ErrorMessage("Uniform number must be unique in a team.", ex.getMessage()))
+                    .build();
+            }
+            throw ex;
+        }
+    }
+
+    @DELETE
+    @Transactional
+    @Path("/{id}")
+    public Response delete(@PathParam("id") Integer playerId) {
+        repository.findByIdOptional(playerId).ifPresentOrElse(player -> {
+            player.isActive = false;
+            repository.persist(player);
+        }, () -> {
+            throw new NotFoundException();
+        });
+        return Response.status(Status.NO_CONTENT).build();
+    }
+
+    public record PlayerCreateRequest(
+        Integer teamId,
+        String name,
+        Integer uniformNumber,
+        String position
+    ) {
+    }
+}

@@ -81,6 +81,26 @@ curl "http://localhost:8080/v1/panache-sample/teams/native-cte-stats"
 curl "http://localhost:8080/v1/panache-sample/teams/native-cte-stats?min_manager_count=1"
 ```
 
+## Player endpoints
+
+Player API examples:
+
+- `GET /v1/player`
+- `GET /v1/player/{id}`
+- `POST /v1/player/`
+- `DELETE /v1/player/{id}` (soft delete)
+
+Examples:
+
+```shell
+curl "http://localhost:8080/v1/player?team_id=1&position=OF"
+curl "http://localhost:8080/v1/player/1"
+curl -X POST "http://localhost:8080/v1/player/" \
+  -H "Content-Type: application/json" \
+  -d '{"teamId":1,"name":"テスト太郎","uniformNumber":99,"position":"IF"}'
+curl -X DELETE "http://localhost:8080/v1/player/1"
+```
+
 ## Packaging and running the application
 
 The application can be packaged using:

@@ -32,5 +32,26 @@ values  (1, true, 1, '2023-09-03 15:42:02', '2023-09-03 15:42:02', '岡田彰布
         (11, true, 11, '2023-09-03 15:47:25', '2023-09-03 15:47:25', '松井稼頭央'),
         (12, true, 12, '2023-09-03 15:47:25', '2023-09-03 15:47:25', '新庄剛志');
 
-ALTER SEQUENCE team_seq RESTART WITH 12;
-ALTER SEQUENCE manager_id_seq RESTART WITH 12;
+-- Add 120 dummy players (10 players x 12 teams)
+insert into public.player (id, is_active, team_id, created_at, updated_at, name, uniform_number, position)
+select
+    i,
+    true,
+    ((i - 1) % 12) + 1,
+    '2024-01-01 00:00:00',
+    '2024-01-01 00:00:00',
+    'ダミー選手' || lpad(i::text, 3, '0'),
+    ((i - 1) / 12) + 1,
+    case ((i - 1) % 6)
+        when 0 then 'P'
+        when 1 then 'C'
+        when 2 then 'IF'
+        when 3 then 'OF'
+        when 4 then 'IF'
+        else 'OF'
+    end
+from generate_series(1, 120) as s(i);
+
+ALTER SEQUENCE team_seq RESTART WITH 13;
+ALTER SEQUENCE manager_id_seq RESTART WITH 13;
+ALTER SEQUENCE player_id_seq RESTART WITH 121;

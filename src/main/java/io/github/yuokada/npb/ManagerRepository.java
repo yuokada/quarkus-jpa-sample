@@ -6,12 +6,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.List;
 
 @ApplicationScoped
-public class ManagerRepository implements PanacheRepositoryBase<Manager, Long> {
+public class ManagerRepository implements PanacheRepositoryBase<Manager, Integer> {
     public Manager findByName(String name) {
         return find("name", name).firstResult();
     }
 
-    public List<Manager> allManagers(Boolean includeDeleted) {
+    public List<Manager> listByIncludeDeleted(Boolean includeDeleted) {
         if (includeDeleted != null && includeDeleted) {
             return listAll(Sort.by("id"));
         } else {

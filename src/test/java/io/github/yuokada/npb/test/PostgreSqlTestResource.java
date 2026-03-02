@@ -1,4 +1,4 @@
-package io.github.yuokada.npb;
+package io.github.yuokada.npb.test;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;

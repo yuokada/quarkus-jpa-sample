@@ -12,7 +12,7 @@ public class TeamRepository implements PanacheRepositoryBase<Team, Integer> {
         return find("name", name).firstResult();
     }
 
-    public List<Team> allTeam(Boolean includeDeleted) {
+    public List<Team> listByIncludeDeleted(Boolean includeDeleted) {
         if (includeDeleted != null && includeDeleted) {
             return listAll(Sort.by("id"));
         } else {

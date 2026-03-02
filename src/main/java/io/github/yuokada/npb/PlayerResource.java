@@ -27,8 +27,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponseSchema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.hibernate.exception.ConstraintViolationException;
-import org.jboss.logging.Logger;
 
 @Path("/v1/player")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -36,7 +34,6 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class PlayerResource {
 
-    private static final Logger LOGGER = Logger.getLogger(PlayerResource.class.getName());
     private static final Set<String> SUPPORTED_POSITIONS = Set.of("P", "C", "IF", "OF");
     private static final int PLAYER_NAME_MAX_LENGTH = 64;
     private static final int MIN_UNIFORM_NUMBER = 0;
@@ -116,17 +113,13 @@ public class PlayerResource {
             throw new BadRequestException("toTeamId must be different from current team.");
         }
 
-        try {
-            player.team = toTeam;
-            if (request.uniformNumber() != null) {
-                player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
-            }
-            repository.persistAndFlush(player);
-            recordTransferHistory(player, fromTeam, toTeam, request.transferredAt());
-            return Response.ok(player).build();
-        } catch (ConstraintViolationException ex) {
-            return buildConstraintViolationResponse(ex);
+        player.team = toTeam;
+        if (request.uniformNumber() != null) {
+            player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
         }
+        repository.persistAndFlush(player);
+        recordTransferHistory(player, fromTeam, toTeam, request.transferredAt());
+        return Response.ok(player).build();
     }
 
     @GET
@@ -160,18 +153,14 @@ public class PlayerResource {
         }
 
         Team team = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
-        try {
-            Player player = new Player();
-            player.team = team;
-            player.name = normalizeName(request.name());
-            player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
-            player.position = normalizePosition(request.position());
-            repository.persistAndFlush(player);
-            recordTransferHistory(player, null, player.team, player.createdAt);
-            return Response.status(Status.CREATED).entity(player).build();
-        } catch (ConstraintViolationException ex) {
-            return buildConstraintViolationResponse(ex);
-        }
+        Player player = new Player();
+        player.team = team;
+        player.name = normalizeName(request.name());
+        player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
+        player.position = normalizePosition(request.position());
+        repository.persistAndFlush(player);
+        recordTransferHistory(player, null, player.team, player.createdAt);
+        return Response.status(Status.CREATED).entity(player).build();
     }
 
     @PUT
@@ -201,33 +190,29 @@ public class PlayerResource {
         Team nextTeam = previousTeam;
         boolean teamChanged = false;
 
-        try {
-            if (request.teamId() != null) {
-                nextTeam = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
-                teamChanged = !nextTeam.id.equals(previousTeam.id);
-                player.team = nextTeam;
-            }
-
-            if (request.name() != null) {
-                player.name = normalizeName(request.name());
-            }
-
-            if (request.uniformNumber() != null) {
-                player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
-            }
-
-            if (request.position() != null) {
-                player.position = normalizePosition(request.position());
-            }
-
-            repository.persistAndFlush(player);
-            if (teamChanged) {
-                recordTransferHistory(player, previousTeam, nextTeam, LocalDateTime.now());
-            }
-            return Response.ok(player).build();
-        } catch (ConstraintViolationException ex) {
-            return buildConstraintViolationResponse(ex);
+        if (request.teamId() != null) {
+            nextTeam = teamRepository.findByIdOptional(request.teamId()).orElseThrow(NotFoundException::new);
+            teamChanged = !nextTeam.id.equals(previousTeam.id);
+            player.team = nextTeam;
         }
+
+        if (request.name() != null) {
+            player.name = normalizeName(request.name());
+        }
+
+        if (request.uniformNumber() != null) {
+            player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
+        }
+
+        if (request.position() != null) {
+            player.position = normalizePosition(request.position());
+        }
+
+        repository.persistAndFlush(player);
+        if (teamChanged) {
+            recordTransferHistory(player, previousTeam, nextTeam, LocalDateTime.now());
+        }
+        return Response.ok(player).build();
     }
 
     @DELETE
@@ -241,17 +226,6 @@ public class PlayerResource {
             throw new NotFoundException();
         });
         return Response.status(Status.NO_CONTENT).build();
-    }
-
-    private Response buildConstraintViolationResponse(ConstraintViolationException ex) {
-        LOGGER.error("Transaction failed: ", ex);
-        String constraintName = ex.getConstraintName();
-        if (constraintName != null && constraintName.contains("team_id") && constraintName.contains("uniform_number")) {
-            return Response.status(Status.CONFLICT)
-                .entity(new ErrorMessage("Uniform number must be unique in a team.", ex.getMessage()))
-                .build();
-        }
-        throw ex;
     }
 
     private String normalizeName(String name) {

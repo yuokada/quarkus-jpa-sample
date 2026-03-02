@@ -1,7 +1,5 @@
 package io.github.yuokada.npb;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -25,13 +23,10 @@ public class ManagerResource {
     @Inject
     ManagerRepository repository;
 
-    @Inject
-    ObjectMapper mapper;
-
     @GET
     @Path("/{id}")
     @APIResponseSchema(value = Manager.class, responseCode = "200")
-    public Response getByIdCross(@PathParam("id") long managerId) {
+    public Response getById(@PathParam("id") Integer managerId) {
         Manager manager = repository.findByIdOptional(managerId).orElseThrow(NotFoundException::new);
         return Response.ok(manager).build();
     }
@@ -39,25 +34,7 @@ public class ManagerResource {
     @GET
     @APIResponseSchema(value = Manager[].class, responseCode = "200")
     public Response list(@QueryParam("include_deleted") Boolean includeDeleted) {
-        List<Manager> teams = repository.allManagers(includeDeleted);
+        List<Manager> teams = repository.listByIncludeDeleted(includeDeleted);
         return Response.ok(teams).build();
     }
-
-    private ManageResponse convertToManageResponse(Manager manager) {
-        return new ManageResponse(
-            manager.id,
-            manager.name,
-            manager.team.id,
-            manager.team.name
-        );
-    }
-
-    @JsonSerialize
-    public record ManageResponse(
-        Integer id,
-        String name,
-        Integer team_id,
-        String team_name) {
-    }
-
 }

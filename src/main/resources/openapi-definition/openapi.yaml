@@ -157,7 +157,7 @@ paths:
         required: true
         schema:
           type: integer
-          format: int64
+          format: int32
       responses:
         "200":
           description: OK
@@ -165,7 +165,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Manager"
-      summary: Get By Id Cross
+      summary: Get By Id
       tags:
       - Manager Resource
   /v1/panache-sample/teams:
@@ -401,26 +401,6 @@ paths:
       tags:
       - Player Resource
   /v1/team:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TeamCreateRequest"
-        required: true
-      responses:
-        "201": {}
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorMessage"
-        "500": {}
-        "400":
-          description: Bad Request
-      summary: Post V 2
-      tags:
-      - Team Resource
     get:
       parameters:
       - name: include_deleted
@@ -439,6 +419,26 @@ paths:
       summary: List
       tags:
       - Team Resource
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+        required: true
+      responses:
+        "201": {}
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
+        "400":
+          description: Bad Request
+      summary: Create
+      tags:
+      - Team Resource
   /v1/team/{id}:
     get:
       parameters:
@@ -455,7 +455,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Team"
-      summary: Get By Id Cross
+      summary: Get By Id
       tags:
       - Team Resource
     delete:

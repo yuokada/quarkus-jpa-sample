@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -40,6 +41,8 @@ public class PlayerResource {
     private static final int PLAYER_NAME_MAX_LENGTH = 64;
     private static final int MIN_UNIFORM_NUMBER = 0;
     private static final int MAX_UNIFORM_NUMBER = 999;
+    private static final int DEFAULT_TRANSFER_HISTORY_LIMIT = 100;
+    private static final int MAX_TRANSFER_HISTORY_LIMIT = 500;
 
     @Inject
     PlayerRepository repository;
@@ -61,10 +64,23 @@ public class PlayerResource {
     @GET
     @Path("/{id}/transfers")
     @APIResponseSchema(value = PlayerTransferHistoryResponse[].class, responseCode = "200")
-    public Response getTransfers(@PathParam("id") Integer playerId) {
+    public Response getTransfers(
+        @PathParam("id") Integer playerId,
+        @QueryParam("from") String from,
+        @QueryParam("to") String to,
+        @QueryParam("limit") Integer limit
+    ) {
         repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
+        LocalDateTime fromDateTime = parseDateTimeOrNull(from, "from");
+        LocalDateTime toDateTime = parseDateTimeOrNull(to, "to");
+        int validatedLimit = validateTransferHistoryLimit(limit);
+
+        if (fromDateTime != null && toDateTime != null && fromDateTime.isAfter(toDateTime)) {
+            throw new BadRequestException("from must be less than or equal to to.");
+        }
+
         List<PlayerTransferHistoryResponse> responses = transferHistoryRepository
-            .findByPlayerIdOrderByTransferredAtAsc(playerId)
+            .search(playerId, fromDateTime, toDateTime, validatedLimit)
             .stream()
             .map(history -> new PlayerTransferHistoryResponse(
                 history.id,
@@ -76,6 +92,41 @@ public class PlayerResource {
             ))
             .toList();
         return Response.ok(responses).build();
+    }
+
+    @POST
+    @Transactional
+    @Path("/{id}/transfers")
+    @APIResponses({
+        @APIResponse(responseCode = "200"),
+        @APIResponse(responseCode = "400"),
+        @APIResponse(responseCode = "404"),
+        @APIResponse(responseCode = "409", content = @Content(schema = @Schema(implementation = ErrorMessage.class))),
+        @APIResponse(responseCode = "500")
+    })
+    public Response transfer(@PathParam("id") Integer playerId, PlayerTransferRequest request) {
+        if (request == null || request.toTeamId() == null) {
+            throw new BadRequestException("toTeamId is required.");
+        }
+
+        Player player = repository.findByIdOptional(playerId).orElseThrow(NotFoundException::new);
+        Team fromTeam = player.team;
+        Team toTeam = teamRepository.findByIdOptional(request.toTeamId()).orElseThrow(NotFoundException::new);
+        if (fromTeam.id.equals(toTeam.id)) {
+            throw new BadRequestException("toTeamId must be different from current team.");
+        }
+
+        try {
+            player.team = toTeam;
+            if (request.uniformNumber() != null) {
+                player.uniformNumber = normalizeUniformNumber(request.uniformNumber());
+            }
+            repository.persistAndFlush(player);
+            recordTransferHistory(player, fromTeam, toTeam, request.transferredAt());
+            return Response.ok(player).build();
+        } catch (ConstraintViolationException ex) {
+            return buildConstraintViolationResponse(ex);
+        }
     }
 
     @GET
@@ -239,6 +290,27 @@ public class PlayerResource {
         transferHistoryRepository.persist(history);
     }
 
+    private LocalDateTime parseDateTimeOrNull(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new BadRequestException(fieldName + " must be ISO-8601 date-time format.");
+        }
+    }
+
+    private int validateTransferHistoryLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_TRANSFER_HISTORY_LIMIT;
+        }
+        if (limit <= 0 || limit > MAX_TRANSFER_HISTORY_LIMIT) {
+            throw new BadRequestException("limit must be between 1 and 500.");
+        }
+        return limit;
+    }
+
     public record PlayerCreateRequest(
         Integer teamId,
         String name,
@@ -262,6 +334,13 @@ public class PlayerResource {
         Integer toTeamId,
         LocalDateTime transferredAt,
         LocalDateTime createdAt
+    ) {
+    }
+
+    public record PlayerTransferRequest(
+        Integer toTeamId,
+        Integer uniformNumber,
+        LocalDateTime transferredAt
     ) {
     }
 }

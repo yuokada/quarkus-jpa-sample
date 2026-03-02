@@ -88,6 +88,17 @@ components:
           $ref: "#/components/schemas/LocalDateTime"
         createdAt:
           $ref: "#/components/schemas/LocalDateTime"
+    PlayerTransferRequest:
+      type: object
+      properties:
+        toTeamId:
+          type: integer
+          format: int32
+        uniformNumber:
+          type: integer
+          format: int32
+        transferredAt:
+          $ref: "#/components/schemas/LocalDateTime"
     PlayerUpdateRequest:
       type: object
       properties:
@@ -328,6 +339,34 @@ paths:
       tags:
       - Player Resource
   /v1/player/{id}/transfers:
+    post:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerTransferRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400": {}
+        "404": {}
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "500": {}
+      summary: Transfer
+      tags:
+      - Player Resource
     get:
       parameters:
       - name: id
@@ -336,6 +375,19 @@ paths:
         schema:
           type: integer
           format: int32
+      - name: from
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: to
+        in: query
+        schema:
+          type: string
       responses:
         "200":
           description: OK

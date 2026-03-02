@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class PlayerTransferHistoryResourceTest {
 
     @Test
-    void shouldGetTransferHistoryAndAppendEventOnTeamChange() {
+    void shouldGetTransferHistoryAndAppendEventByTransferApi() {
         List<Map<String, Object>> initialEvents = given()
             .when().get("/v1/player/1/transfers")
             .then()
@@ -35,8 +36,8 @@ class PlayerTransferHistoryResourceTest {
 
         given()
             .contentType(ContentType.JSON)
-            .body(Map.of("teamId", 2, "uniformNumber", 99))
-            .when().put("/v1/player/1")
+            .body(Map.of("toTeamId", 2, "uniformNumber", 99))
+            .when().post("/v1/player/1/transfers")
             .then()
             .statusCode(200)
             .body("team.id", is(2));
@@ -53,5 +54,33 @@ class PlayerTransferHistoryResourceTest {
         Map<String, Object> lastEvent = updatedEvents.get(updatedEvents.size() - 1);
         assertEquals(1, ((Number) lastEvent.get("fromTeamId")).intValue());
         assertEquals(2, ((Number) lastEvent.get("toTeamId")).intValue());
+    }
+
+    @Test
+    void shouldFilterTransferHistoryByFromToAndLimit() {
+        List<Map<String, Object>> limited = given()
+            .queryParam("from", "2024-01-01T00:00:00")
+            .queryParam("to", "2024-01-01T00:00:00")
+            .queryParam("limit", 1)
+            .when().get("/v1/player/1/transfers")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getList("$");
+
+        assertEquals(1, limited.size());
+        assertNull(limited.get(0).get("fromTeamId"));
+        assertEquals("2024-01-01T00:00:00", limited.get(0).get("transferredAt"));
+
+        List<Map<String, Object>> empty = given()
+            .queryParam("from", "2024-01-02T00:00:00")
+            .when().get("/v1/player/1/transfers")
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath()
+            .getList("$");
+        assertTrue(empty.isEmpty());
     }
 }
